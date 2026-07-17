@@ -1,20 +1,35 @@
-# Virtual Environment
-venv/
+# Virtual environments
+.ig/
 .venv/
 env/
+venv/
+ENV/
 .gss/
 
-# Local Vector Database (ChromaDB)
-chroma_data/
-
-# Environment Variables & Secrets
-.env
-
-# Python Cache & Builds
+# Python caching & builds
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+.installed.cfg
+*.egg
 *.pyc
 *.pyo
 *.pyd
+
+# Test and coverage
 .pytest_cache/
 .coverage
 htmlcov/
@@ -22,6 +37,24 @@ dist/
 build/
 *.egg-info/
 
+# UV lock file (per rule)
+uv.lock
+
+# Archives (per rule)
+Archives/
+
+# Environment variables & local configs
+.env
+.vscode/
+.idea/
+
+# Local database files
+chroma_data/
+
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Temporary directories created by test suite
+tmp*/
+.tmp*/
