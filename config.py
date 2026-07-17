@@ -12,7 +12,17 @@ class Settings:
     ARXIV_MAX_RESULTS: int = int(os.getenv("ARXIV_MAX_RESULTS", "10"))
     GITHUB_TOKEN: Optional[str] = os.getenv("GITHUB_TOKEN")
     
+    # Cloud Vector DB & LLM Configurations
+    PINECONE_API_KEY: Optional[str] = os.getenv("PINECONE_API_KEY")
+    PINECONE_ENVIRONMENT: Optional[str] = os.getenv("PINECONE_ENVIRONMENT")
+    PINECONE_INDEX_URL: Optional[str] = os.getenv("PINECONE_INDEX_URL")
+    SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY")
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    
     # Security Boundary: Restricts all scaffolding writes and workspace scans to the workspace folder
     WORKSPACE_ROOT: Path = Path(os.getenv("WORKSPACE_ROOT", str(Path(__file__).parent.resolve()))).resolve()
 
 settings = Settings()
+

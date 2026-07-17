@@ -129,10 +129,10 @@ ideation-goat/
 - [x] Concept breeding (cross-pollination)
 - [x] Patent viability assessment
 - [x] Architecture specification generator
-- [ ] Cloud vector DB integration (Pinecone / Supabase pgvector)
-- [ ] Live arXiv and Google Scholar ingestion
-- [ ] Patent database API connections
-- [ ] LLM synthesis for "Why this fits you"
+- [x] Cloud vector DB integration (Pinecone / Supabase pgvector)
+- [x] Live arXiv and Google/Semantic Scholar ingestion
+- [x] Patent database API connections
+- [x] LLM synthesis for "Why this fits you"
 
 ## License
 

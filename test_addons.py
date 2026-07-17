@@ -12,7 +12,8 @@ from server import (
     compose_solution_stack,
     get_repo_health,
     profile_repo_hardware_footprint,
-    align_system_architecture
+    align_system_architecture,
+    search_academic_papers
 )
 
 async def run_tests():
@@ -51,6 +52,14 @@ async def run_tests():
     except Exception as e:
         print("FAILED:", e)
 
+    print("\n=== Testing search_academic_papers ===")
+    try:
+        res = await search_academic_papers("caching mechanisms", max_results=2)
+        print("SUCCESS:\n", str(res)[:300], "\n...")
+    except Exception as e:
+        print("FAILED:", e)
+
 if __name__ == "__main__":
     import asyncio
     asyncio.run(run_tests())
+

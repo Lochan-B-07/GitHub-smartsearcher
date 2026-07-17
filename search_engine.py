@@ -1,7 +1,11 @@
 import logging
+import urllib.request
+import json
 from typing import List, Dict, Any
 from config import settings
 from arxiv_client import ArXivClient
+from scholar_client import ScholarClient
+from patent_client import PatentClient
 
 logger = logging.getLogger("IdeationGOAT.SearchEngine")
 
@@ -20,6 +24,8 @@ class CrossDomainSearchEngine:
     
     def __init__(self):
         self.arxiv_client = ArXivClient()
+        self.scholar_client = ScholarClient()
+        self.patent_client = PatentClient()
         self.mock_repos = [
             {"source": "GitHub", "title": "CacheGraphene", "url": "https://github.com/example/CacheGraphene", "summary": "Lock-free persistent LRU caching layer utilizing transactional memory primitives.", "category": "cs.SE"},
             {"source": "GitHub", "title": "MeshFlow", "url": "https://github.com/example/MeshFlow", "summary": "High-performance service mesh router optimizing network package distribution using adaptive load balancing.", "category": "cs.NI"},
@@ -81,6 +87,94 @@ class CrossDomainSearchEngine:
             }
         ]
 
+    def query_vector_db(self, query_term: str, n_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Queries the vector database:
+        1. Supabase (pgvector RPC) if SUPABASE_URL and SUPABASE_KEY are set.
+        2. Pinecone if PINECONE_API_KEY and PINECONE_INDEX_URL are set.
+        3. Local ChromaDB as a standard fallback.
+        """
+        embedding = None
+        if HAS_CHROMADB:
+            try:
+                default_ef = embedding_functions.DefaultEmbeddingFunction()
+                embedding = default_ef([query_term])[0]
+            except Exception as e:
+                logger.warning(f"Could not compute embedding locally: {str(e)}")
+
+        # 1. Supabase (pgvector RPC)
+        if settings.SUPABASE_URL and settings.SUPABASE_KEY and embedding is not None:
+            try:
+                url = f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/rpc/match_repositories"
+                headers = {
+                    "Content-Type": "application/json",
+                    "apikey": settings.SUPABASE_KEY,
+                    "Authorization": f"Bearer {settings.SUPABASE_KEY}"
+                }
+                body = {
+                    "query_embedding": embedding,
+                    "match_threshold": 0.2,
+                    "match_count": n_results
+                }
+                req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode('utf-8'))
+                
+                matches = []
+                for item in res_data:
+                    matches.append({
+                        "source": "GitHub (Supabase)",
+                        "title": item.get('name', 'Unknown'),
+                        "url": item.get('url', '#'),
+                        "summary": item.get('summary', '') or item.get('description', ''),
+                        "language": item.get('language', 'Unknown'),
+                        "stars": int(item.get('stars', 0)),
+                        "category": item.get('category', 'cs.SE')
+                    })
+                if matches:
+                    logger.info(f"Retrieved {len(matches)} matches from Supabase pgvector.")
+                    return matches
+            except Exception as e:
+                logger.error(f"Supabase pgvector query failed: {str(e)}. Falling back.")
+
+        # 2. Pinecone
+        if settings.PINECONE_API_KEY and settings.PINECONE_INDEX_URL and embedding is not None:
+            try:
+                url = f"{settings.PINECONE_INDEX_URL.rstrip('/')}/query"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Api-Key": settings.PINECONE_API_KEY
+                }
+                body = {
+                    "vector": embedding,
+                    "topK": n_results,
+                    "includeMetadata": True
+                }
+                req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode('utf-8'))
+                
+                matches = []
+                for item in res_data.get('matches', []):
+                    metadata = item.get('metadata', {})
+                    matches.append({
+                        "source": "GitHub (Pinecone)",
+                        "title": metadata.get('name', 'Unknown'),
+                        "url": metadata.get('url', '#'),
+                        "summary": metadata.get('summary', '') or metadata.get('description', ''),
+                        "language": metadata.get('language', 'Unknown'),
+                        "stars": int(metadata.get('stars', 0)),
+                        "category": metadata.get('category', 'cs.SE')
+                    })
+                if matches:
+                    logger.info(f"Retrieved {len(matches)} matches from Pinecone index.")
+                    return matches
+            except Exception as e:
+                logger.error(f"Pinecone query failed: {str(e)}. Falling back.")
+
+        # 3. Fallback to local ChromaDB
+        return self.query_local_db(query_term, n_results)
+
     def query_local_db(self, query_term: str, n_results: int = 5) -> List[Dict[str, Any]]:
         """
         Retrieves repositories from ChromaDB or falls back to mock list.
@@ -115,6 +209,8 @@ class CrossDomainSearchEngine:
                         "title": metadata.get('name', 'Unknown'),
                         "url": metadata.get('url', '#'),
                         "summary": results['documents'][0][i],
+                        "language": metadata.get('language', 'Unknown'),
+                        "stars": int(metadata.get('stars', 0)),
                         "category": "cs.SE"
                     })
             return matches
@@ -135,7 +231,7 @@ class CrossDomainSearchEngine:
         """
         Target Mode: Gathers direct implementation code from GitHub and papers from arXiv.
         """
-        local_matches = self.query_local_db(query, n_results=3)
+        local_matches = self.query_vector_db(query, n_results=3)
         arxiv_matches = self.arxiv_client.search(query, max_results=settings.ARXIV_MAX_RESULTS)
         return local_matches + arxiv_matches
 
@@ -144,11 +240,25 @@ class CrossDomainSearchEngine:
         Discovery Mode: Inverse-Similarity Serendipity Search.
         Skips exact CS domain matches, forcing search into biology, mechanics, physics.
         """
-        raw_papers = self.arxiv_client.search(query, max_results=6)
+        raw_papers = self.arxiv_client.search(query, max_results=4)
+        scholar_papers = self.scholar_client.search(query, max_results=3)
         
+        # Combine academic papers
+        all_academic = []
+        for paper in raw_papers:
+            all_academic.append(paper)
+        for paper in scholar_papers:
+            all_academic.append({
+                "source": "Semantic Scholar",
+                "title": paper["title"],
+                "url": paper["url"],
+                "summary": paper["summary"],
+                "category": "non-cs"
+            })
+            
         # Apply Inverse-Similarity Filter: Ignore CS clusters to escape domain bubbles
         filtered_papers = []
-        for paper in raw_papers:
+        for paper in all_academic:
             category = paper.get("category", "")
             if category.startswith("cs."):
                 logger.info(f"Filtering out CS paper '{paper['title']}' (Category: {category}) in Discovery Mode.")
@@ -168,7 +278,7 @@ class CrossDomainSearchEngine:
         matches = []
         for paper in filtered_papers[:3]:
             matches.append({
-                "source": f"arXiv ({paper['category']})",
+                "source": f"Academic Research ({paper['source']})",
                 "title": paper["title"],
                 "url": paper["url"],
                 "abstract": paper["summary"],
@@ -245,7 +355,7 @@ class CrossDomainSearchEngine:
         
         for layer_name, config in active_layers.items():
             layer_query = f"{query} {config['subquery']}"
-            results = self.query_local_db(layer_query, n_results=n_results)
+            results = self.query_vector_db(layer_query, n_results=n_results)
             
             output.append(f"### 📦 Layer: {layer_name}")
             
@@ -277,4 +387,80 @@ class CrossDomainSearchEngine:
         output.append("Ensure the components you select share a common language ecosystem or communicate via standardized network protocols (REST, WebSockets, or gRPC). For instance, a TypeScript-based offline storage engine pairs perfectly with a React Native or Node.js runtime.")
         
         return "\n".join(output)
+
+    def synthesize_why_fits(self, query: str, matches: List[Dict[str, Any]]) -> str:
+        """
+        Uses an LLM (Gemini or OpenAI) to generate a brief summary explaining
+        why the top matched frameworks fit the user's idea and how they solve it.
+        """
+        if not matches:
+            return "No matches found to synthesize."
+            
+        summary_text = "\n".join([f"- {m.get('title', m.get('name', 'Unknown'))}: {m.get('summary', m.get('abstract', ''))}" for m in matches[:3]])
+        
+        # 1. Try Gemini
+        if settings.GEMINI_API_KEY:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+                headers = {"Content-Type": "application/json"}
+                prompt_content = (
+                    f"The user wants to build: '{query}'.\n"
+                    f"Here are the top matched tools/frameworks:\n{summary_text}\n"
+                    f"Provide a concise, 2-3 sentence expert synthesis explaining why these options "
+                    f"are a good fit and how the developer should combine or use them."
+                )
+                body = {
+                    "contents": [{
+                        "parts": [{"text": prompt_content}]
+                    }]
+                }
+                req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode('utf-8'))
+                
+                text = res_data['candidates'][0]['content']['parts'][0]['text']
+                return text.strip()
+            except Exception as e:
+                logger.warning(f"Gemini synthesis failed: {str(e)}")
+                
+        # 2. Try OpenAI
+        if settings.OPENAI_API_KEY:
+            try:
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {settings.OPENAI_API_KEY}"
+                }
+                prompt_content = (
+                    f"The user wants to build: '{query}'.\n"
+                    f"Here are the top matched tools/frameworks:\n{summary_text}\n"
+                    f"Provide a concise, 2-3 sentence expert synthesis explaining why these options "
+                    f"are a good fit and how the developer should combine or use them."
+                )
+                body = {
+                    "model": "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prompt_content}],
+                    "max_tokens": 150
+                }
+                req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode('utf-8'))
+                
+                text = res_data['choices'][0]['message']['content']
+                return text.strip()
+            except Exception as e:
+                logger.warning(f"OpenAI synthesis failed: {str(e)}")
+                
+        # 3. Dynamic Rule-based Fallback (High-quality heuristic)
+        explanation = []
+        explanation.append("### 🧠 Architectural Synthesis (Rule-based Fallback)")
+        explanation.append(f"Based on your requirements to build **'{query}'**, we matched the following frameworks:")
+        for m in matches[:3]:
+            title = m.get('title', m.get('name', 'Unknown'))
+            source = m.get('source', 'Index')
+            explanation.append(f"- **{title}** ({source}): Best suited to handle the core operational characteristics of your intent.")
+        
+        explanation.append("\n**Recommendation**: Integrate these components using clean interfaces. For example, wrap the storage engine within a repository adapter and access it from your business logic layer to prevent direct dependency coupling.")
+        return "\n".join(explanation)
+
 

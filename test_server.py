@@ -19,7 +19,8 @@ from server import (
     compose_solution_stack,
     get_repo_health,
     profile_repo_hardware_footprint,
-    align_system_architecture
+    align_system_architecture,
+    search_academic_papers
 )
 
 # -------------------------------------------------------------------------
@@ -60,6 +61,10 @@ class TestIdeationGoatServer(unittest.TestCase):
             "mode": "",
             "matches": []
         }
+        # Mock Scholar and Patent clients to avoid real network hits during existing tests
+        from unittest.mock import MagicMock
+        server.search_engine.scholar_client.search = MagicMock(return_value=[])
+        server.search_engine.patent_client.search = MagicMock(return_value=[])
 
     @patch("urllib.request.urlopen")
     def test_search_knowledge_grid_target_mode(self, mock_urlopen):
@@ -422,6 +427,88 @@ class TestIdeationGoatServer(unittest.TestCase):
             self.assertIn("Architectural Vector Alignment Report", res)
             self.assertIn("Clean / Hexagonal", res)
             self.assertIn("Database", res)
+
+    @patch('urllib.request.urlopen')
+    def test_scholar_client_search(self, mock_urlopen):
+        # Mock Response
+        from unittest.mock import MagicMock
+        import json
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "data": [{
+                "title": "Quantum Caching in Neurobiology",
+                "abstract": "A study of quantum cache effects.",
+                "url": "https://example.com/quantum",
+                "paperId": "12345",
+                "citationCount": 42
+            }]
+        }).encode('utf-8')
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        from scholar_client import ScholarClient
+        client = ScholarClient()
+        papers = client.search("quantum cache")
+        
+        self.assertEqual(len(papers), 1)
+        self.assertEqual(papers[0]["title"], "Quantum Caching in Neurobiology")
+        self.assertEqual(papers[0]["citations"], 42)
+
+    @patch('urllib.request.urlopen')
+    def test_patent_client_search(self, mock_urlopen):
+        from unittest.mock import MagicMock
+        import json
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "patents": [{
+                "patent_number": "9999999",
+                "patent_title": "Cache Eviction Composite Systems",
+                "patent_abstract": "A method to evict items.",
+                "patent_date": "2026-01-01"
+            }]
+        }).encode('utf-8')
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        from patent_client import PatentClient
+        client = PatentClient()
+        patents = client.search("cache eviction")
+
+        self.assertEqual(len(patents), 1)
+        self.assertEqual(patents[0]["patent_number"], "9999999")
+        self.assertEqual(patents[0]["title"], "Cache Eviction Composite Systems")
+
+    @patch('urllib.request.urlopen')
+    def test_search_academic_papers_tool(self, mock_urlopen):
+        # We need to restore the mock for scholar search in this test case
+        from unittest.mock import MagicMock
+        import json
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "data": [{
+                "title": "Quantum Caching in Neurobiology",
+                "abstract": "A study of quantum cache effects.",
+                "url": "https://example.com/quantum",
+                "paperId": "12345",
+                "citationCount": 42
+            }]
+        }).encode('utf-8')
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+
+        server.search_engine.scholar_client.search = MagicMock(return_value=[{
+            "source": "Semantic Scholar",
+            "title": "Quantum Caching in Neurobiology",
+            "url": "https://example.com/quantum",
+            "summary": "A study of quantum cache effects.",
+            "citations": 42
+        }])
+
+        with patch.object(server.search_engine.arxiv_client, 'search', return_value=[{"title": "ArXiv Paper", "url": "url", "summary": "summary", "category": "cs.SE", "source": "arXiv"}]):
+            loop = asyncio.get_event_loop()
+            res = loop.run_until_complete(
+                search_academic_papers(query="cache", max_results=2)
+            )
+            self.assertEqual(res["status"], "success")
+            self.assertEqual(len(res["arxiv_results"]), 1)
+            self.assertEqual(len(res["scholar_results"]), 1)
 
 if __name__ == "__main__":
     unittest.main()
