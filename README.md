@@ -1,115 +1,154 @@
 <div align="center">
   <img src="logo.png" alt="Ideation Goat Logo" width="200" height="200">
-  <h1>Ideation Goat</h1>
-  <p><strong>Find your next framework or research paper not by keywords, but by <em>original intent</em>.</strong></p>
+  <h1>Ideation GOAT</h1>
+  <p><strong>Cross-Domain Cross-Pollination & Ideation Engine for AI Agents</strong></p>
   
   <p>
     <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python Version">
-    <img src="https://img.shields.io/badge/Streamlit-1.32+-red.svg" alt="Streamlit">
-    <img src="https://img.shields.io/badge/ChromaDB-Vector_DB-purple.svg" alt="ChromaDB">
+    <img src="https://img.shields.io/badge/MCP-FastMCP-purple.svg" alt="MCP">
     <img src="https://img.shields.io/badge/License-GPL--3.0-green.svg" alt="License">
   </p>
 </div>
 
 ---
 
-## 🧠 The Problem
-Traditional search tools rely on keywords. If you search for "fast backend with login", you might miss a revolutionary repository called "HyperVault" simply because it doesn't use your specific keywords in its title or tags. Similarly, finding relevant scientific papers is often hindered by jargon and exact phrasing.
+## What It Is
 
-**Ideation Goat** uses Semantic Search (Vector Embeddings) to understand the *meaning* of your request, matching it against the deep technical and theoretical context found in thousands of repository READMEs, Google Scholar profiles, and arXiv papers.
+Ideation GOAT is an MCP (Model Context Protocol) server that acts as the creative subconscious of advanced AI agents. It performs cross-domain knowledge hybridization, patent viability analysis, and architecture synthesis — outputting structured JSON payloads and Mermaid.js diagrams that coding agents can immediately consume.
 
-## ✨ Features
-- **Semantic Mapping**: Uses the `all-MiniLM-L6-v2` model to map natural language ideas to the high-dimensional vector space of GitHub descriptions and research paper abstracts.
-- **Multi-Source Search**: Matches intent against both active open-source software and academic research papers (Google Scholar and arXiv).
-- **Persistent Local Intelligence**: Powered by ChromaDB for local vector storage—no cloud required for MVP.
-- **Intelligent Ingestion**: A dedicated pipeline that cleans markdown, removes noisy badges, chunks READMEs, and parses paper content to capture the "soul" of an idea.
-- **Language Filtering**: Multi-dimensional filtering to find the right tool in the right ecosystem (Python, Rust, etc.).
+No UI. No web frontend. Just a pure engine designed to be called by Claude Desktop, Cursor, Windsurf, or custom agent swarms.
 
-## 🚀 Getting Started
+## Core Tools
 
-### 1. Prerequisites (Test Machine)
-Ensure you have Python 3.9+ installed on your test machine. Note: This project is designed to run its heavy ML workloads on dedicated lab hardware.
+| Tool | Purpose |
+|---|---|
+| **`search_knowledge_grid`** | Multi-domain query engine across GitHub repos, arXiv papers, Google Scholar, and patent databases. Supports **target mode** (direct precision) and **discovery mode** (inverse-similarity cross-pollination). |
+| **`breed_concepts`** | Takes two distinct concept vectors, computes their relational intersection, and returns a structured JSON payload detailing how the mechanics of System A can be grafted onto System B. |
+| **`assess_viability`** | Cross-references a design against patent claims and market competitors. Returns semantic vector gaps — safe design directions free of active conflicts. |
+| **`generate_scaffolding_doc`** | Compiles a concept synthesis into a rigorous Systems Architecture Specification with Mermaid.js diagrams and mathematical constraints, ready for downstream coding agents. |
 
-### 2. Installation
+## Architecture
+
+```
+AI Agent (Claude Desktop / Cursor / Custom Swarm)
+    |
+    | JSON-RPC over stdio
+    |
+    v
+server.py (FastMCP)
+    |
+    +-- search_knowledge_grid (query, mode, cognitive_distance)
+    +-- breed_concepts (concept_a, concept_b)
+    +-- assess_viability (system_design)
+    +-- generate_scaffolding_doc (synthesis_output)
+```
+
+## Discovery Mode (Inverse-Similarity)
+
+The dual-engine framework supports two query modes:
+
+- **Target Mode**: Finds direct operational equivalents within the same domain space.
+- **Discovery Mode**: Bypasses native domain clusters. Filters out exact-domain matches and selects highest-scoring records from foreign domain groups (Biology, Mechanical Engineering, etc.) that share underlying functional structure.
+
+The `cognitive_distance` parameter (0.0–1.0) controls how far into foreign domain clusters the search reaches.
+
+## Installation
+
 ```bash
 git clone https://github.com/suzaykid/ideation-goat.git
 cd ideation-goat
 pip install -r requirements.txt
 ```
 
-### 3. Configuration
-Create a `.env` file in the root directory:
-```env
-GITHUB_TOKEN=your_github_personal_access_token
-```
+## Running
 
-### 4. Data Ingestion
-Populate your local vector database with real GitHub data:
+### Standalone (stdio)
+
 ```bash
-python data_ingestion.py
+python server.py
 ```
 
-### 5. Launch the Matcher
-```bash
-streamlit run app.py
-```
+### Claude Desktop Configuration
 
-## 🛠️ Tech Stack
-- **Frontend**: [Streamlit](https://streamlit.io/)
-- **Vector DB**: [ChromaDB](https://www.trychroma.com/)
-- **Embeddings**: Sentence-Transformers (Local MiniLM via ONNX - no heavy PyTorch required)
-- **API**: [PyGithub](https://github.com/PyGithub/PyGithub)
-- **Protocol**: [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+Add to your `claude_desktop_config.json`:
 
-## 🤖 Model Context Protocol (MCP) Integration
-
-You can run this project as a local MCP server, allowing LLM hosts (such as Claude Desktop or Cursor) to call the semantic search database directly.
-
-### Exposed Tools & Resources:
-- **`search_repos` (Tool)**: Semantically query repositories using a natural language idea or intent (with optional language filters).
-- **`ingest_repos` (Tool)**: Request the crawler to fetch and chunk the top repositories for a specific programming language.
-- **`github-ideas://stats` (Resource)**: Query database coverage stats (number of chunks, languages, and repositories).
-
-### Claude Desktop Setup
-Add the following configuration to your `claude_desktop_config.json` (usually located at `~/.config/Claude/claude_desktop_config.json` on Linux or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "ideation-goat": {
-      "command": "/home/suzaykid/Projects/ideation-goat/.gss/bin/python",
+      "command": "uv",
       "args": [
-        "/home/suzaykid/Projects/ideation-goat/mcp_server.py"
-      ],
-      "env": {
-        "GITHUB_TOKEN": "your_github_personal_access_token"
-      }
+        "--directory",
+        "/ABSOLUTE/PATH/TO/ideation-goat",
+        "run",
+        "server.py"
+      ]
     }
   }
 }
 ```
 
-## 🗺️ Roadmap
-Check our [Archives/roadmap.md](Archives/roadmap.md) for the full vision, including:
-- [x] Model Context Protocol (MCP) Local Server
-- [ ] Cloud Vector DB Migration (Pinecone/Supabase)
-- [ ] LLM Synthesis for "Why this repo fits you"
-- [ ] Next.js + Tailwind CSS Production Frontend
+### Cursor / Windsurf Configuration
 
-## 📄 License
+Add the same configuration to your MCP settings file in the respective IDE.
+
+## Example Usage
+
+Once configured, trigger the engine through your AI client:
+
+> *"I want to design a new distributed caching database. Call `search_knowledge_grid` using `discovery` mode with a cognitive distance of 0.85 to find alternative operational models outside computer science. Then, take the best biological match and breed it with standard Redis architecture definitions."*
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **MCP Protocol** | [FastMCP](https://github.com/modelcontextprotocol/python-sdk) (stdio transport) |
+| **Type Safety** | Pydantic v2 |
+| **Language** | Python 3.9+ |
+
+## Project Structure
+
+```
+ideation-goat/
+├── server.py              # MCP server (main entry point)
+├── data_ingestion.py      # Utility: GitHub API data pipeline
+├── requirements.txt       # Python dependencies
+├── README.md
+└── Archives/
+    ├── mcp_server_v1.py   # Archived: original MCP server
+    ├── roadmap.md         # Original 5-phase roadmap
+    └── Future_Steps.md    # Tracked pending work items
+```
+
+## Roadmap
+
+- [x] MCP Server with dual-engine search
+- [x] Concept breeding (cross-pollination)
+- [x] Patent viability assessment
+- [x] Architecture specification generator
+- [ ] Cloud vector DB integration (Pinecone / Supabase pgvector)
+- [ ] Live arXiv and Google Scholar ingestion
+- [ ] Patent database API connections
+- [ ] LLM synthesis for "Why this fits you"
+
+## License
+
 This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
-
 
 ---
 
-## 🛡️ Licensing & Privacy Protection
+## Licensing & Privacy Protection
 
-Because this repository contains personal code, portfolios, or intellectual property, **strict privacy protections are in place**.
+This repository contains personal code and intellectual property. **Strict privacy protections are in place.**
 
-### ⚠️ Prohibitions on AI Training & Scraping
+### Prohibitions on AI Training & Scraping
+
 This repository is published for direct human viewing only. Automated data scraping, harvesting, and crawling are strictly prohibited under the author's personal copyright terms.
 
 **By accessing this repository or its contents, you agree to the following terms:**
-*   **NO AI/LLM Ingestion:** Any ingestion of code, text, layouts, designs, or assets for training, validation, testing, or tuning of machine learning models, neural networks, or artificial intelligence systems (such as Large Language Models) is strictly prohibited.
+*   **NO AI/LLM Ingestion:** Any ingestion of code, text, layouts, designs, or assets for training, validation, testing, or tuning of machine learning models, neural networks, or artificial intelligence systems is strictly prohibited.
 *   **NO Automated Data Scraping:** Any automated extraction, parsing, harvesting, or scraping of content by bots, crawlers, scripts, or spiders is prohibited.
 *   **Personal Use Only:** Human viewing for personal or educational review is permitted. No duplication, modification, adaptation, or commercial distribution of this work is allowed without express written permission.
