@@ -23,60 +23,58 @@ Powered by **Gemini 3.1 Flash Lite** for high-speed structural reasoning, enforc
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TB
-    %% Node Definitions & Styling
-    classDef client fill:#f3f4f6,stroke:#4b5563,stroke-width:2px,rx:5px,ry:5px;
-    classDef core fill:#f3e8ff,stroke:#7c3aed,stroke-width:2px,rx:8px,ry:8px;
-    classDef d1 fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,rx:6px,ry:6px;
-    classDef d2 fill:#ecfdf5,stroke:#059669,stroke-width:2px,rx:6px,ry:6px;
-    classDef d3 fill:#fff7ed,stroke:#ea580c,stroke-width:2px,rx:6px,ry:6px;
-    classDef db fill:#f9fafb,stroke:#374151,stroke-width:2px;
-    classDef security fill:#fee2e2,stroke:#dc2626,stroke-width:2px;
+graph LR
+    %% ──────────────────────────────────────
+    %% STYLING
+    %% ──────────────────────────────────────
+    classDef client fill:#f3f4f6,stroke:#4b5563,stroke-width:2px
+    classDef core fill:#f3e8ff,stroke:#7c3aed,stroke-width:2px
+    classDef sec fill:#fee2e2,stroke:#dc2626,stroke-width:2px
+    classDef d1 fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px
+    classDef d2 fill:#ecfdf5,stroke:#059669,stroke-width:1.5px
+    classDef d3 fill:#fff7ed,stroke:#ea580c,stroke-width:1.5px
+    classDef db fill:#fef9c3,stroke:#ca8a04,stroke-width:2px
 
-    %% Elements
-    IDE["🖥️ IDE / AI Agent Host"]:::client
-    ZOD{"🛡️ Zod Validation &<br/>Schema Auto-Healer"}:::core
-    ORCH["🧠 Master Orchestrator<br/>(orchestrator.py)"]:::core
-    ROUTER{"🔀 Domain Router<br/>Intent Classification"}:::core
-    JWT["🔐 JWT Identity<br/>Sandbox Verifier"]:::security
+    %% ──────────────────────────────────────
+    %% CORE PIPELINE (flows left → right)
+    %% ──────────────────────────────────────
+    IDE["🖥️ IDE / AI Agent"]:::client
+    IDE -->|"JSON-RPC over stdio"| ZOD{"🛡️ Zod Validation\n& Auto-Healer"}:::core
+    ZOD --> JWT["🔐 JWT Identity\nSandbox"]:::sec
+    ZOD --> ORCH["🧠 Master\nOrchestrator"]:::core
+    ORCH --> ROUTER{"🔀 Domain\nRouter"}:::core
 
-    CHROMA[("🗄️ ChromaDB<br/>Vector Store")]:::db
-    CACHE[("💾 In-Memory<br/>Session Cache")]:::db
+    %% ──────────────────────────────────────
+    %% DOMAIN BRANCHES (stack top → bottom)
+    %% ──────────────────────────────────────
+    ROUTER -->|"Codebase & Infra"| D1
+    ROUTER -->|"Research & Papers"| D2
+    ROUTER -->|"Design & UI"| D3
 
-    %% Main Flow
-    IDE -->|"JSON-RPC over stdio"| ZOD
-    ZOD --> ORCH
-    ORCH --> ROUTER
-    ZOD --> JWT
-
-    ROUTER --> D1
-    ROUTER --> D2
-    ROUTER --> D3
-
-    %% Domain 1: Codebase & Frameworks
-    subgraph D1 ["📁 Domain 1: Codebase & Frameworks"]
+    %% ──────────────────────────────────────
+    %% DOMAIN 1 — Codebase & Frameworks
+    %% 11 tools listed vertically
+    %% ──────────────────────────────────────
+    subgraph D1 ["📁 DOMAIN 1 — Codebase & Frameworks"]
         direction TB
-        subgraph D1_Analysis ["Static Code Analysis"]
-            AST["📂 AST & Dependency Scanner"]:::d1
-            DI["💉 Dependency Injection Profiler"]:::d1
-            LOCKIN["🔒 Vendor Lock-In Profiler"]:::d1
-            HW["🎛️ Edge Hardware Footprint Sizer"]:::d1
-        end
-        subgraph D1_Integration ["Ecosystem Integrations"]
-            GH["🐙 GitHub Registry Search"]:::d1
-            GL["🦊 GitLab Projects Search"]:::d1
-            HN["📰 Hacker News Sentiment Audit"]:::d1
-            CVE["🛡️ CVE Security Shield (OSV.dev)"]:::d1
-        end
-        subgraph D1_Ops ["Project Operations"]
-            HEALTH["🩺 Repo Health & Bug Profiler"]:::d1
-            COST["💰 Cloud Cost Forecaster"]:::d1
-            DOCKER["🐳 Docker & Scaffold Synthesizer"]:::d1
-        end
+        AST["📂 AST & Dependency Scanner"]:::d1
+        GH["🐙 GitHub Registry Search"]:::d1
+        GL["🦊 GitLab Projects Search"]:::d1
+        HN["📰 Hacker News Sentiment Audit"]:::d1
+        CVE["🛡️ CVE Security Shield"]:::d1
+        LOCKIN["🔒 Vendor Lock-In Profiler"]:::d1
+        HEALTH["🩺 Repo Health & Bug Profiler"]:::d1
+        HW["🎛️ Edge Hardware Footprint Sizer"]:::d1
+        DI["💉 Dependency Injection Profiler"]:::d1
+        COST["💰 Cloud Cost Forecaster"]:::d1
+        DOCKER["🐳 Docker & Scaffold Synthesizer"]:::d1
     end
 
-    %% Domain 2: Research & Academic Papers
-    subgraph D2 ["🔬 Domain 2: Research & Papers"]
+    %% ──────────────────────────────────────
+    %% DOMAIN 2 — Research & Papers
+    %% 4 tools listed vertically
+    %% ──────────────────────────────────────
+    subgraph D2 ["🔬 DOMAIN 2 — Research & Papers"]
         direction TB
         ARXIV["📄 arXiv Preprints Client"]:::d2
         SCHOLAR["🎓 Google Scholar Search"]:::d2
@@ -84,23 +82,26 @@ graph TB
         BRIDGE["🔄 Code ↔ Theory Translator"]:::d2
     end
 
-    %% Domain 3: Design & UI
-    subgraph D3 ["🎨 Domain 3: Design & UI"]
+    %% ──────────────────────────────────────
+    %% DOMAIN 3 — Design & UI
+    %% 5 tools listed vertically
+    %% ──────────────────────────────────────
+    subgraph D3 ["🎨 DOMAIN 3 — Design & UI"]
         direction TB
-        CANVAS["🌌 Metaphor Canvas Node Graph"]:::d3
+        CANVAS["🌌 Metaphor Canvas"]:::d3
         BREED["🧬 Concept Hybridization Engine"]:::d3
         WIDGETS["⚛️ @nitrostack/widgets Renderer"]:::d3
-        subgraph D3_Ref ["Design Inspiration & Galleries"]
-            AWWWARDS["🏆 Awwwards Design Reference"]:::d3
-            DRIBBBLE["🎯 Dribbble Moodboard Canvas"]:::d3
-        end
+        AWWWARDS["🏆 Awwwards Design Reference"]:::d3
+        DRIBBBLE["🎯 Dribbble Moodboard Canvas"]:::d3
     end
 
-    %% Data Connections
-    AST --> CHROMA
-    GH --> CHROMA
-    ORCH --> CACHE
-    CANVAS --> CACHE
+    %% ──────────────────────────────────────
+    %% DATA STORES
+    %% ──────────────────────────────────────
+    AST -.-> CHROMA[("🗄️ ChromaDB\nVector Store")]:::db
+    GH -.-> CHROMA
+    ORCH -.-> CACHE[("💾 Session\nCache")]:::db
+    CANVAS -.-> CACHE
 ```
 
 ---
