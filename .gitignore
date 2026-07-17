@@ -1,16 +1,17 @@
-# Byte-compiled / optimized / DLL files
+# Virtual environments
+.ig/
+.venv/
+env/
+venv/
+ENV/
+
+# Python caching & builds
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -21,17 +22,23 @@ sdist/
 var/
 wheels/
 share/python-wheels/
-*.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
 
-# Virtual Environments
-.venv/
-venv/
-ENV/
-env/
+# UV lock file (per rule)
+uv.lock
 
-# Editor / IDE settings
+# Archives (per rule)
+Archives/
+
+# Environment variables & local configs
+.env
 .vscode/
 .idea/
 
