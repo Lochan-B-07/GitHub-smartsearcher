@@ -1,5 +1,6 @@
+![Ideation GOAT Banner](banner.png)
+
 <div align="center">
-  <img src="logo.png" alt="Ideation Goat Logo" width="200" height="200">
   <h1>Ideation GOAT</h1>
   <p><strong>Cross-Domain Cross-Pollination & Ideation Engine for AI Agents</strong></p>
   
