@@ -24,69 +24,83 @@ Powered by **Gemini 3.1 Flash Lite** for high-speed structural reasoning, enforc
 
 ```mermaid
 graph TB
-    subgraph Client Layer
-        IDE["🖥️ IDE / AI Agent Host"]
-    end
+    %% Node Definitions & Styling
+    classDef client fill:#f3f4f6,stroke:#4b5563,stroke-width:2px,rx:5px,ry:5px;
+    classDef core fill:#f3e8ff,stroke:#7c3aed,stroke-width:2px,rx:8px,ry:8px;
+    classDef d1 fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,rx:6px,ry:6px;
+    classDef d2 fill:#ecfdf5,stroke:#059669,stroke-width:2px,rx:6px,ry:6px;
+    classDef d3 fill:#fff7ed,stroke:#ea580c,stroke-width:2px,rx:6px,ry:6px;
+    classDef db fill:#f9fafb,stroke:#374151,stroke-width:2px;
+    classDef security fill:#fee2e2,stroke:#dc2626,stroke-width:2px;
 
+    %% Elements
+    IDE["🖥️ IDE / AI Agent Host"]:::client
+    ZOD{"🛡️ Zod Validation &<br/>Schema Auto-Healer"}:::core
+    ORCH["🧠 Master Orchestrator<br/>(orchestrator.py)"]:::core
+    ROUTER{"🔀 Domain Router<br/>Intent Classification"}:::core
+    JWT["🔐 JWT Identity<br/>Sandbox Verifier"]:::security
+
+    CHROMA[("🗄️ ChromaDB<br/>Vector Store")]:::db
+    CACHE[("💾 In-Memory<br/>Session Cache")]:::db
+
+    %% Main Flow
     IDE -->|"JSON-RPC over stdio"| ZOD
-
-    subgraph MCP Server Core
-        ZOD{"🛡️ Zod Validation<br/>& Schema Auto-Healer"}
-        ZOD --> ORCH["🧠 Master Orchestrator<br/>(orchestrator.py)"]
-        ORCH --> ROUTER{"🔀 Domain Router<br/>Intent Classification"}
-    end
+    ZOD --> ORCH
+    ORCH --> ROUTER
+    ZOD --> JWT
 
     ROUTER --> D1
     ROUTER --> D2
     ROUTER --> D3
 
+    %% Domain 1: Codebase & Frameworks
     subgraph D1 ["📁 Domain 1: Codebase & Frameworks"]
         direction TB
-        AST["📂 AST & Dependency<br/>Scanner"]
-        GH["🐙 GitHub Registry<br/>Search"]
-        GL["🦊 GitLab Projects<br/>Search"]
-        HN["📰 Hacker News<br/>Sentiment Audit"]
-        CVE["🛡️ CVE Security<br/>Shield (OSV.dev)"]
-        LOCKIN["🔒 Vendor Lock-In<br/>Profiler"]
-        HEALTH["🩺 Repo Health &<br/>Bug Profiler"]
-        HW["🎛️ Edge Hardware<br/>Footprint Sizer"]
-        DOCKER["🐳 Docker & Scaffold<br/>Synthesizer"]
-        DI["💉 Dependency Injection<br/>Profiler"]
-        COST["💰 Cloud Cost<br/>Forecaster"]
+        subgraph D1_Analysis ["Static Code Analysis"]
+            AST["📂 AST & Dependency Scanner"]:::d1
+            DI["💉 Dependency Injection Profiler"]:::d1
+            LOCKIN["🔒 Vendor Lock-In Profiler"]:::d1
+            HW["🎛️ Edge Hardware Footprint Sizer"]:::d1
+        end
+        subgraph D1_Integration ["Ecosystem Integrations"]
+            GH["🐙 GitHub Registry Search"]:::d1
+            GL["🦊 GitLab Projects Search"]:::d1
+            HN["📰 Hacker News Sentiment Audit"]:::d1
+            CVE["🛡️ CVE Security Shield (OSV.dev)"]:::d1
+        end
+        subgraph D1_Ops ["Project Operations"]
+            HEALTH["🩺 Repo Health & Bug Profiler"]:::d1
+            COST["💰 Cloud Cost Forecaster"]:::d1
+            DOCKER["🐳 Docker & Scaffold Synthesizer"]:::d1
+        end
     end
 
+    %% Domain 2: Research & Academic Papers
     subgraph D2 ["🔬 Domain 2: Research & Papers"]
         direction TB
-        ARXIV["📄 arXiv Preprints<br/>Client"]
-        SCHOLAR["🎓 Google Scholar<br/>Literature Search"]
-        PATENTS["⚖️ Google Patents<br/>IP Collision Detector"]
-        BRIDGE["🔄 Code ↔ Theory<br/>Bidirectional Translator"]
+        ARXIV["📄 arXiv Preprints Client"]:::d2
+        SCHOLAR["🎓 Google Scholar Search"]:::d2
+        PATENTS["⚖️ Google Patents IP Claims"]:::d2
+        BRIDGE["🔄 Code ↔ Theory Translator"]:::d2
     end
 
+    %% Domain 3: Design & UI
     subgraph D3 ["🎨 Domain 3: Design & UI"]
         direction TB
-        CANVAS["🌌 Metaphor Canvas<br/>Node Graph"]
-        BREED["🧬 Concept Hybridization<br/>Engine"]
-        AWWWARDS["🏆 Awwwards Design<br/>Reference"]
-        DRIBBBLE["🎯 Dribbble Moodboard<br/>Canvas"]
-        WIDGETS["⚛️ @nitrostack/widgets<br/>React Renderer"]
+        CANVAS["🌌 Metaphor Canvas Node Graph"]:::d3
+        BREED["🧬 Concept Hybridization Engine"]:::d3
+        WIDGETS["⚛️ @nitrostack/widgets Renderer"]:::d3
+        subgraph D3_Ref ["Design Inspiration & Galleries"]
+            AWWWARDS["🏆 Awwwards Design Reference"]:::d3
+            DRIBBBLE["🎯 Dribbble Moodboard Canvas"]:::d3
+        end
     end
 
-    subgraph Data Stores
-        CHROMA[("🗄️ ChromaDB<br/>Vector Store")]
-        CACHE[("💾 In-Memory<br/>Session Cache")]
-    end
-
+    %% Data Connections
     AST --> CHROMA
     GH --> CHROMA
     ORCH --> CACHE
     CANVAS --> CACHE
-
-    subgraph Auth & Security
-        JWT["🔐 JWT Identity<br/>Sandbox Verifier"]
-    end
-
-    ZOD --> JWT
 ```
 
 ---
@@ -175,20 +189,86 @@ Open `.env` and populate the required keys:
 
 ---
 
-## 🧪 Verification
-
-Run the full offline test suite to verify all 24 tools:
-
+### 4. Install Dependencies
 ```bash
-python3 -m unittest discover tests
-```
-
-```
-----------------------------------------------------------------------
-Ran 32 tests in 1.9s
-
-OK
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
 ---
+
+## 🚀 Running the Server
+
+### Standalone stdio Mode
+You can run the server directly in your terminal to verify that it starts correctly:
+```bash
+python server.py
+```
+
+### Integration with Claude Desktop
+To integrate Ideation GOAT, edit your `claude_desktop_config.json` configuration file:
+
+*   **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+*   **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Replace `/ABSOLUTE/PATH/TO/ideation-goat` with the actual absolute path to your repository.
+
+#### Configuration (macOS / Linux)
+```json
+{
+  "mcpServers": {
+    "ideation-goat": {
+      "command": "/ABSOLUTE/PATH/TO/ideation-goat/.venv/bin/python",
+      "args": [
+        "/ABSOLUTE/PATH/TO/ideation-goat/server.py"
+      ]
+    }
+  }
+}
+```
+
+#### Configuration (Windows)
+```json
+{
+  "mcpServers": {
+    "ideation-goat": {
+      "command": "C:\\ABSOLUTE\\PATH\\TO\\ideation-goat\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\ABSOLUTE\\PATH\\TO\\ideation-goat\\server.py"
+      ]
+    }
+  }
+}
+```
+---
+
+## 🧪 Running the Offline Test Suite
+
+Ideation GOAT includes a comprehensive unit testing suite that uses mocks to run completely offline without requiring internet access or API credentials.
+
+Run the test suite using standard Python:
+```bash
+.venv/bin/python -m unittest discover -s tests
+```
+
+---
+
+## 🎨 Interactive Resources
+
+### Constellation Map Graph (`ideation-goat://canvas`)
+The server exposes a custom MCP resource mapping cognitive paths. It returns a node-and-edge JSON graph containing:
+*   **Nodes:** Matched codebase topics, patents, and academic papers.
+*   **Edges:** Cognitive distances and relational overlaps.
+*   **Use Case:** Frontends can fetch this URI to render interactive, node-based visual graphics showing where ideas intersect.
+
+---
+
+## 📄 License & Restrictions
+
+This project is licensed under the GPL-3.0 License.
+
+### Automated Training & Ingestion Restriction
+*   **NO AI Training Ingestion:** Ingestion of code, text, layouts, designs, or assets for training, validation, testing, or tuning of machine learning models or neural networks is strictly prohibited.
+*   **NO Automated Scraping:** Scraping, harvesting, or automated crawling of this repository by spiders or scraper bots is prohibited.
+*   **Personal/Human Use Only:** Access is provided strictly for human code inspection and educational review.
 
