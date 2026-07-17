@@ -187,13 +187,19 @@ if db_count == 0:
     st.info("💡 Note: You can create a `.env` file containing `GITHUB_TOKEN=your_token` in the root folder to prevent rate limit limits.")
 else:
     # Import our new discovery tools
-    from mcp_server import (
-        verify_workspace_fit, 
-        compose_solution_stack, 
-        get_repo_health, 
-        profile_repo_hardware_footprint, 
-        align_system_architecture
-    )
+    from workspace_analyzer import WorkspaceAnalyzer
+    from repo_profiler import RepoProfiler
+    from search_engine import CrossDomainSearchEngine
+    
+    workspace_analyzer = WorkspaceAnalyzer()
+    repo_profiler = RepoProfiler()
+    search_engine = CrossDomainSearchEngine()
+    
+    verify_workspace_fit = workspace_analyzer.verify_workspace_fit
+    compose_solution_stack = search_engine.compose_solution_stack
+    get_repo_health = repo_profiler.get_repo_health
+    profile_repo_hardware_footprint = repo_profiler.profile_repo_hardware_footprint
+    align_system_architecture = workspace_analyzer.align_system_architecture
     
     # Define 6 tabs for different discovery suite tools
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([

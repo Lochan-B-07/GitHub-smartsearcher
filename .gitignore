@@ -4,6 +4,7 @@
 env/
 venv/
 ENV/
+.gss/
 
 # Python caching & builds
 __pycache__/
@@ -24,6 +25,11 @@ wheels/
 share/python-wheels/
 .installed.cfg
 *.egg
+*.pyc
+*.pyo
+*.pyd
+
+# Test and coverage
 .pytest_cache/
 .coverage
 htmlcov/
@@ -44,6 +50,10 @@ Archives/
 
 # Local database files
 chroma_data/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
 
 # Temporary directories created by test suite
 tmp*/

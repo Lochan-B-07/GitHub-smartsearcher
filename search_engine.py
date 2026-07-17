@@ -277,8 +277,9 @@ class CrossDomainSearchEngine:
             
         matches = []
         for paper in filtered_papers[:3]:
+            category_suffix = f" - {paper['category']}" if paper.get('category') else ""
             matches.append({
-                "source": f"Academic Research ({paper['source']})",
+                "source": f"Academic Research ({paper['source']}{category_suffix})",
                 "title": paper["title"],
                 "url": paper["url"],
                 "abstract": paper["summary"],
