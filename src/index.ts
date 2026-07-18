@@ -1,13 +1,13 @@
 import { ToolDecorator as Tool, z, ExecutionContext, McpApp, Module } from '@nitrostack/core';
 import { spawn } from 'child_process';
-import * as path from 'path';
 
 /**
  * Executes a tool function against the underlying Python core backend engine.
  * Spawns an asynchronous Python process and retrieves the output.
+ * Returns a clean error JSON if python3 is unavailable in the host environment.
  */
 async function runPythonTool(toolName: string, args: Record<string, any>): Promise<any> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const pythonCode = `
 import asyncio
 import json
@@ -29,32 +29,47 @@ async def main():
 
 asyncio.run(main())
 `;
-    // Spawn python3 child process
-    const child = spawn('python3', ['-c', pythonCode, JSON.stringify(args)], {
-      cwd: process.cwd(),
-      env: process.env
-    });
+    let child: ReturnType<typeof spawn>;
+
+    try {
+      child = spawn('python3', ['-c', pythonCode, JSON.stringify(args)], {
+        cwd: process.cwd(),
+        env: process.env
+      });
+    } catch (spawnErr: any) {
+      resolve({
+        status: 'error',
+        message: `Python runtime unavailable in this environment: ${spawnErr.message}`
+      });
+      return;
+    }
 
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (data) => {
-      stdout += data;
+    child.stdout.on('data', (data: Buffer) => { stdout += data; });
+    child.stderr.on('data', (data: Buffer) => { stderr += data; });
+
+    child.on('error', (err: NodeJS.ErrnoException) => {
+      // Handles ENOENT (python3 not found) without crashing the server
+      if (err.code === 'ENOENT') {
+        resolve({
+          status: 'error',
+          message: 'Python 3 runtime not found in this deployment environment. This tool requires the Python backend to be co-deployed.'
+        });
+      } else {
+        resolve({ status: 'error', message: err.message });
+      }
     });
 
-    child.stderr.on('data', (data) => {
-      stderr += data;
-    });
-
-    child.on('close', (code) => {
+    child.on('close', (code: number | null) => {
       if (code !== 0) {
-        reject(new Error(`Python process exited with code ${code}. Stderr: ${stderr}`));
+        resolve({ status: 'error', message: `Python process exited with code ${code}. Stderr: ${stderr}` });
         return;
       }
       try {
-        const parsed = JSON.parse(stdout.trim());
-        resolve(parsed);
-      } catch (err) {
+        resolve(JSON.parse(stdout.trim()));
+      } catch {
         resolve(stdout.trim());
       }
     });
